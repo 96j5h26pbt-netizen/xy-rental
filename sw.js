@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xiaoyuan-rental-v1.0.4';
+const CACHE_NAME = 'xy-rental-v1';
 const ASSETS = [
   './',
   './index.html',
