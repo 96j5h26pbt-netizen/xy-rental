@@ -1718,7 +1718,7 @@ function renderLedger() {
     <div class="section">
       <div class="section-title"><h3>${IC.money} 收入记录 (${incomes.length})</h3></div>
       ${incomes.length ? incomes.map(i => `
-        <div class="card record-card">
+        <div class="card record-card" onclick="editIncome(${i.id})">
           <div class="record-icon" style="background:#E8F5E9;">${IC.money}</div>
           <div class="record-info">
             <div class="record-name">${i.clothesName}</div>
@@ -1731,7 +1731,7 @@ function renderLedger() {
     <div class="section">
       <div class="section-title"><h3>${IC.bag} 进货记录 (${purchases.length})</h3></div>
       ${purchases.length ? purchases.map(p => `
-        <div class="card record-card">
+        <div class="card record-card" onclick="editPurchase(${p.id})">
           <div class="record-icon" style="background:#FFEBEE;">${IC.bag}</div>
           <div class="record-info">
             <div class="record-name">${p.name}</div>
@@ -1898,6 +1898,127 @@ function savePurchase() {
   saveDB();
   closeAllSheets();
   showToast('进货已记录！');
+  renderLedger();
+  renderOverview();
+}
+
+/* ==================== EDIT INCOME / PURCHASE ==================== */
+function editIncome(id) {
+  const item = DB.incomes.find(x => x.id === id);
+  if (!item) return;
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.edit} 编辑收入</h2>
+    <div class="form-group">
+      <label>日期</label>
+      <input type="date" id="r_date" value="${item.date}">
+    </div>
+    <div class="form-group">
+      <label>商品名称 *</label>
+      <input type="text" id="r_name" value="${item.clothesName}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>金额 ¥ *</label>
+        <input type="number" id="r_amount" value="${item.amount}">
+      </div>
+      <div class="form-group">
+        <label>订单号</label>
+        <input type="text" id="r_no" value="${item.orderNo||''}">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveEditIncome(${id})">保存修改</button>
+    <button class="btn-secondary" style="border-color:var(--red);color:var(--red);margin-top:8px;" onclick="deleteIncome(${id})">${IC.trash} 删除此记录</button>
+  `;
+  openSheet(content);
+}
+
+function saveEditIncome(id) {
+  const item = DB.incomes.find(x => x.id === id);
+  if (!item) return;
+  const date = $('#r_date').value;
+  const name = $('#r_name').value.trim();
+  const amount = parseFloat($('#r_amount').value) || 0;
+  const no = $('#r_no').value.trim() || '手动录入';
+  if (!name) { showToast('请输入商品名称'); return; }
+  if (amount <= 0) { showToast('请输入金额'); return; }
+  item.date = date;
+  item.clothesName = name;
+  item.amount = amount;
+  item.orderNo = no;
+  saveDB();
+  closeAllSheets();
+  showToast('收入已修改！');
+  renderLedger();
+  renderOverview();
+}
+
+function deleteIncome(id) {
+  if (!confirm('确认删除这条收入记录？')) return;
+  DB.incomes = DB.incomes.filter(x => x.id !== id);
+  saveDB();
+  closeAllSheets();
+  showToast('已删除');
+  renderLedger();
+  renderOverview();
+}
+
+function editPurchase(id) {
+  const item = DB.purchases.find(x => x.id === id);
+  if (!item) return;
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.edit} 编辑进货</h2>
+    <div class="form-group">
+      <label>日期</label>
+      <input type="date" id="p_date" value="${item.date}">
+    </div>
+    <div class="form-group">
+      <label>商品名称 *</label>
+      <input type="text" id="p_name" value="${item.name}">
+    </div>
+    <div class="form-group">
+      <label>进货价 ¥ *</label>
+      <input type="number" id="p_amount" value="${item.amount}">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="p_note" value="${item.note||''}">
+    </div>
+    <button class="btn-primary" onclick="saveEditPurchase(${id})">保存修改</button>
+    <button class="btn-secondary" style="border-color:var(--red);color:var(--red);margin-top:8px;" onclick="deletePurchase(${id})">${IC.trash} 删除此记录</button>
+  `;
+  openSheet(content);
+}
+
+function saveEditPurchase(id) {
+  const item = DB.purchases.find(x => x.id === id);
+  if (!item) return;
+  const date = $('#p_date').value;
+  const name = $('#p_name').value.trim();
+  const amount = parseFloat($('#p_amount').value) || 0;
+  const note = $('#p_note').value.trim();
+  if (!name) { showToast('请输入商品名称'); return; }
+  if (amount <= 0) { showToast('请输入进货价'); return; }
+  item.date = date;
+  item.name = name;
+  item.amount = amount;
+  item.note = note;
+  saveDB();
+  closeAllSheets();
+  showToast('进货已修改！');
+  renderLedger();
+  renderOverview();
+}
+
+function deletePurchase(id) {
+  if (!confirm('确认删除这条进货记录？')) return;
+  DB.purchases = DB.purchases.filter(x => x.id !== id);
+  saveDB();
+  closeAllSheets();
+  showToast('已删除');
   renderLedger();
   renderOverview();
 }
