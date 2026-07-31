@@ -420,7 +420,8 @@ body { min-height: 100vh; max-width: 480px; margin: 0 auto; position: relative; 
 .overview-card .oc-value { font-size: 16px; font-weight: 700; }
 .overview-card .oc-value.big { font-size: 24px; }
 
-.record-card { display: flex; align-items: center; gap: 12px; }
+.record-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.record-card:active { background: var(--pink-light); }
 .record-card .record-icon {
   width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 18px; flex-shrink: 0;
