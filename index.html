@@ -630,6 +630,26 @@ function loadDB() {
 
 function saveDB() {
   localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+  autoBackup();
+}
+
+/* ==================== AUTO BACKUP ==================== */
+function getBackupCode() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return '';
+    return btoa(unescape(encodeURIComponent(raw))).replace(/=+$/, '');
+  } catch(e) { return ''; }
+}
+
+function autoBackup() {
+  const code = getBackupCode();
+  if (!code) return;
+  // 存到 localStorage 的另一个 key，作为自动备份
+  localStorage.setItem('xy_auto_backup', code);
+  // 更新底部备份码显示
+  const el = document.getElementById('autoBackupCode');
+  if (el) el.textContent = code.slice(0, 40) + '...';
 }
 
 /* ==================== BACKUP / RESTORE ==================== */
@@ -2060,6 +2080,51 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+
+<!-- 自动备份码显示 -->
+<div id="autoBackupBar" style="position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-top:1px solid var(--pink-light);padding:8px 12px;z-index:30;display:none;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:11px;color:var(--text-light);white-space:nowrap;">备份码</span>
+    <code id="autoBackupCode" style="font-size:10px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></code>
+    <span onclick="copyAutoBackup()" style="font-size:11px;color:var(--pink-deep);font-weight:600;white-space:nowrap;cursor:pointer;">复制</span>
+  </div>
+</div>
+<script>
+// 页面加载后显示备份码
+window.addEventListener('load', function() {
+  autoBackup();
+  const bar = document.getElementById('autoBackupBar');
+  const code = localStorage.getItem('xy_auto_backup');
+  if (code) bar.style.display = 'block';
+});
+
+function copyAutoBackup() {
+  const code = localStorage.getItem('xy_auto_backup') || '';
+  if (!code) return;
+  const ta = document.createElement('textarea');
+  ta.value = code;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('备份码已复制！');
+}
+
+// 切换 tab 时调整底部间距
+const originalSwitchTab = switchTab;
+switchTab = function(tab) {
+  originalSwitchTab(tab);
+  const bar = document.getElementById('autoBackupBar');
+  if (bar) {
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) {
+      bar.style.bottom = '56px';
+    }
+  }
+};
 </script>
 </body>
 </html>
