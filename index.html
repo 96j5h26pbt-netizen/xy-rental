@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小源租衣铺">
+<meta name="application-name" content="小源租衣铺">
+<meta name="theme-color" content="#B39DDB">
+<meta name="description" content="租衣店铺运营工作台 - 发货排期、每月小结、店铺衣橱管理">
+<link rel="manifest" href="manifest.json?v=4">
+<link rel="apple-touch-icon" href="apple-touch-iconb.png">
+<link rel="icon" type="image/png" href="favicon-32b.png">
+<title>小源租衣铺 · 运营工作台</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --pink: #D1B3E0;
+  --pink-light: #F3E8F8;
+  --pink-deep: #B39DDB;
+  --pink-bg: #FAF5FC;
+  --white: #FFFFFF;
+  --text: #4A3340;
+  --text-light: #A88B99;
+  --text-muted: #C9B5C0;
+  --green: #7DD3A8;
+  --orange: #FFB87D;
+  --red: #FF8A8A;
+  --shadow: 0 4px 20px rgba(179,157,219,0.25);
+  --shadow-soft: 0 2px 12px rgba(179,157,219,0.15);
+  --radius: 16px;
+  --radius-sm: 12px;
+}
+html, body {
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  background: var(--pink-bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+body { min-height: 100vh; max-width: 480px; margin: 0 auto; position: relative; overflow-x: hidden; }
+
+/* ===== SVG Icons ===== */
+.icon { display:inline-block; width:1em; height:1em; vertical-align:middle; stroke-width:1.5; fill:none; stroke:currentColor; }
+.icon-lg { width:1.5em; height:1.5em; }
+.icon-xl { width:2em; height:2em; }
+.icon-2xl { width:2.5em; height:2.5em; }
+.icon-3xl { width:3em; height:3em; }
+.icon-4xl { width:4em; height:4em; }
+.icon-fill { fill:currentColor; stroke:none; }
+
+/* ===== App Shell ===== */
+#app { min-height: 100vh; padding-bottom: 70px; }
+.page { display: none; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+/* ===== Top Bar ===== */
+.topbar {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  padding: calc(50px + env(safe-area-inset-top)) 18px 22px;
+  position: relative;
+  border-radius: 0 0 24px 24px;
+}
+.topbar .menu-btn {
+  position: absolute; top: calc(52px + env(safe-area-inset-top)); left: 18px;
+  font-size: 22px; cursor: pointer; color: var(--white);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.1));
+}
+.topbar .title-row { display: flex; align-items: center; gap: 14px; margin-left: 44px; }
+.topbar .avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--white); display: flex; align-items: center; justify-content: center;
+  font-size: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.topbar .brand-info h1 { color: var(--white); font-size: 19px; font-weight: 700; letter-spacing: 0.5px; }
+.topbar .brand-info p { color: rgba(255,255,255,0.85); font-size: 12px; margin-top: 2px; }
+.topbar .date-badge {
+  position: absolute; top: calc(56px + env(safe-area-inset-top)); right: 18px;
+  background: rgba(255,255,255,0.25); backdrop-filter: blur(8px);
+  color: var(--white); padding: 5px 12px; border-radius: 20px; font-size: 12px;
+}
+
+/* ===== Drawer ===== */
+.drawer-mask {
+  position: fixed; inset: 0; background: rgba(74,51,64,0.4);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
+}
+.drawer-mask.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 75%; max-width: 320px;
+  background: var(--white); z-index: 101; transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.23,1,0.32,1);
+  padding-top: 50px; overflow-y: auto;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-header {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  padding: 30px 24px 24px; margin: -50px 0 0;
+}
+.drawer-header .avatar {
+  width: 60px; height: 60px; border-radius: 50%; background: var(--white);
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+  margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.drawer-header h2 { color: var(--white); font-size: 18px; }
+.drawer-header p { color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 2px; }
+.drawer-menu { list-style: none; padding: 16px 12px; }
+.drawer-menu li {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: 15px; cursor: pointer; margin-bottom: 4px;
+  transition: background 0.2s;
+}
+.drawer-menu li:active { background: var(--pink-light); }
+.drawer-menu li.active { background: var(--pink-light); color: var(--pink-deep); font-weight: 600; }
+.drawer-menu li .icon { font-size: 20px; width: 28px; text-align: center; }
+.drawer-footer { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+/* ===== Bottom Tab Bar ===== */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--white); display: flex; justify-content: space-around;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pink-light);
+  z-index: 50; box-shadow: 0 -2px 16px rgba(248,182,192,0.15);
+}
+.tab-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; padding: 4px 12px; border-radius: 12px;
+  transition: transform 0.2s; flex: 1; text-align: center;
+}
+.tab-item:active { transform: scale(0.88); }
+.tab-item .tab-icon { font-size: 22px; transition: transform 0.2s; }
+.tab-item .tab-label { font-size: 11px; color: var(--text-light); transition: color 0.2s; }
+.tab-item.active .tab-label { color: var(--pink-deep); font-weight: 600; }
+.tab-item.active .tab-icon { transform: scale(1.15); }
+
+/* ===== Content Area ===== */
+.content { padding: 16px; }
+
+/* ===== Stat Cards ===== */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--white); border-radius: var(--radius); padding: 16px;
+  box-shadow: var(--shadow-soft); position: relative; overflow: hidden;
+  transition: transform 0.2s;
+}
+.stat-card:active { transform: scale(0.97); }
+.stat-card .stat-icon { font-size: 24px; margin-bottom: 8px; }
+.stat-card .stat-label { font-size: 12px; color: var(--text-light); }
+.stat-card .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+.stat-card .stat-unit { font-size: 13px; font-weight: 400; margin-left: 2px; }
+.stat-card .stat-deco {
+  position: absolute; right: -10px; bottom: -10px; font-size: 48px; opacity: 0.06;
+}
+
+/* ===== Section ===== */
+.section { margin-bottom: 20px; }
+.section-title {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; padding: 0 2px;
+}
+.section-title h3 { font-size: 16px; font-weight: 700; }
+.section-title .more { font-size: 13px; color: var(--text-light); cursor: pointer; }
+
+/* ===== Card List ===== */
+.card {
+  background: var(--white); border-radius: var(--radius); padding: 14px;
+  box-shadow: var(--shadow-soft); margin-bottom: 12px; transition: transform 0.2s;
+}
+.card:active { transform: scale(0.98); }
+.order-card { display: flex; gap: 12px; align-items: flex-start; }
+.order-card .order-thumb {
+  width: 56px; height: 56px; border-radius: 10px; background: var(--pink-light);
+  display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; overflow: hidden;
+}
+.order-card .order-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.order-card .order-info { flex: 1; min-width: 0; }
+.order-card .order-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.order-card .order-no { font-size: 12px; color: var(--text-light); }
+.order-card .order-status {
+  font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap;
+}
+.status-pending { background: #FFF3E0; color: #E89100; }
+.status-shipped { background: #E3F2FD; color: #1976D2; }
+.status-received { background: #E8F5E9; color: #4CAF50; }
+.status-overdue { background: #FFEBEE; color: #E53935; }
+.order-card .order-goods { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.order-card .order-meta { font-size: 12px; color: var(--text-light); display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ===== Buttons ===== */
+.btn-fab {
+  position: fixed; right: 20px; bottom: 86px; width: 52px; height: 52px;
+  border-radius: 50%; border: none; background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  color: var(--white); font-size: 26px; cursor: pointer; z-index: 40;
+  box-shadow: 0 4px 16px rgba(232,155,168,0.45); transition: transform 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-fab:active { transform: scale(0.88); }
+.btn-add {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  color: var(--pink-deep); cursor: pointer; font-weight: 600; padding: 4px 10px;
+  background: var(--pink-light); border-radius: 20px;
+}
+.btn-add:active { transform: scale(0.95); }
+.btn-primary {
+  display: block; width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  color: var(--white); font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: transform 0.2s; margin-top: 12px;
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-secondary {
+  display: block; width: 100%; padding: 14px; border: 2px solid var(--pink);
+  border-radius: var(--radius-sm); background: var(--white); color: var(--pink-deep);
+  font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px;
+}
+.btn-secondary:active { background: var(--pink-light); }
+.btn-small {
+  padding: 6px 14px; border: none; border-radius: 8px; font-size: 12px;
+  cursor: pointer; font-weight: 600; transition: transform 0.15s;
+}
+.btn-small:active { transform: scale(0.92); }
+.btn-confirm { background: var(--pink); color: var(--white); }
+.btn-outline { background: var(--white); color: var(--pink-deep); border: 1px solid var(--pink); }
+.btn-danger { background: #FFEBEE; color: #E53935; }
+
+/* ===== Modal / Sheet ===== */
+.sheet-mask {
+  position: fixed; inset: 0; background: rgba(74,51,64,0.45);
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.sheet-mask.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; bottom: 0; left: 50%; transform: translate(-50%, 100%);
+  width: 100%; max-width: 480px; background: var(--white);
+  border-radius: 24px 24px 0 0; z-index: 201; transition: transform 0.35s cubic-bezier(0.23,1,0.32,1);
+  max-height: 85vh; overflow-y: auto; padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+}
+.sheet.open { transform: translate(-50%, 0); }
+.sheet-handle { width: 40px; height: 4px; background: var(--pink-light); border-radius: 4px; margin: 0 auto 16px; }
+.sheet h2 { font-size: 18px; margin-bottom: 16px; text-align: center; }
+.sheet-close {
+  position: absolute; top: 16px; right: 16px; width: 30px; height: 30px;
+  border-radius: 50%; background: var(--pink-light); border: none; cursor: pointer;
+  font-size: 16px; color: var(--text-light);
+}
+
+/* ===== Form ===== */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-light); margin-bottom: 6px; font-weight: 500; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 12px 14px; border: 2px solid var(--pink-light); border-radius: var(--radius-sm);
+  font-size: 15px; font-family: inherit; background: var(--pink-bg); color: var(--text);
+  transition: border-color 0.2s; outline: none;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--pink); }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.type-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+.type-toggle button {
+  flex: 1; padding: 10px; border: 2px solid var(--pink-light); border-radius: var(--radius-sm);
+  background: var(--white); font-size: 14px; cursor: pointer; font-weight: 600; color: var(--text-light);
+  transition: all 0.2s;
+}
+.type-toggle button.active { border-color: var(--pink); background: var(--pink-light); color: var(--pink-deep); }
+
+/* ===== Wardrobe Grid ===== */
+.wardrobe-toolbar { margin-bottom: 14px; }
+.search-box {
+  width: 100%; padding: 10px 14px 10px 38px; border: 2px solid var(--pink-light);
+  border-radius: 24px; font-size: 14px; background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A88B99' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+  outline: none; transition: border-color 0.2s;
+}
+.search-box:focus { border-color: var(--pink); }
+.filter-tabs { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tab {
+  padding: 6px 16px; border-radius: 20px; font-size: 13px; white-space: nowrap;
+  cursor: pointer; background: var(--white); color: var(--text-light); border: 1px solid var(--pink-light);
+  transition: all 0.2s;
+}
+.filter-tab.active { background: var(--pink); color: var(--white); border-color: var(--pink); font-weight: 600; }
+
+.wardrobe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.clothes-card {
+  background: var(--white); border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-soft); cursor: pointer; transition: transform 0.2s;
+}
+.clothes-card:active { transform: scale(0.97); }
+.clothes-img {
+  width: 100%; aspect-ratio: 3/4; background: var(--pink-light);
+  display: flex; align-items: center; justify-content: center; font-size: 48px; position: relative; overflow: hidden;
+}
+.clothes-img img { width: 100%; height: 100%; object-fit: cover; }
+.clothes-status-tag {
+  position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; color: var(--white);
+}
+.tag-instock { background: var(--green); }
+.tag-rented { background: var(--orange); }
+.tag-cleaning { background: #B0BEC5; }
+.clothes-info { padding: 10px 12px; }
+.clothes-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clothes-meta { font-size: 11px; color: var(--text-light); display: flex; justify-content: space-between; }
+.clothes-meta .rent { color: var(--pink-deep); font-weight: 600; }
+
+/* ===== Empty State ===== */
+.empty {
+  text-align: center; padding: 50px 20px; color: var(--text-muted);
+}
+.empty .empty-icon { font-size: 56px; margin-bottom: 12px; opacity: 0.4; }
+.empty p { font-size: 14px; }
+
+/* ===== Calendar ===== */
+.calendar {
+  background: var(--white); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-soft);
+}
+.calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.calendar-header .cal-title { font-size: 16px; font-weight: 700; }
+.calendar-header .cal-nav { display: flex; gap: 8px; }
+.calendar-header .cal-nav button {
+  width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--pink-light);
+  font-size: 16px; cursor: pointer; color: var(--pink-deep); transition: transform 0.15s;
+}
+.calendar-header .cal-nav button:active { transform: scale(0.85); }
+.calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 6px; }
+.calendar-week span { text-align: center; font-size: 11px; color: var(--text-light); padding: 4px 0; font-weight: 600; }
+.calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-day {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; border-radius: 8px; position: relative; cursor: pointer;
+  transition: all 0.15s;
+}
+.cal-day:active { transform: scale(0.9); }
+.cal-day.other-month { color: var(--text-muted); opacity: 0.4; }
+.cal-day.today { font-weight: 700; color: var(--pink-deep); }
+.cal-day.today::after {
+  content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: var(--pink);
+}
+.cal-day.occupied { background: var(--pink); color: var(--white); font-weight: 600; }
+.cal-day.occupied.start { border-radius: 8px 2px 2px 8px; }
+.cal-day.occupied.end { border-radius: 2px 8px 8px 2px; }
+.cal-day.occupied span { font-size: 9px; position: absolute; bottom: 1px; opacity: 0.8; }
+.cal-day.selected { background: var(--pink-deep) !important; color: var(--white); }
+
+.cal-day-info {
+  margin-top: 14px; padding: 12px; background: var(--pink-bg); border-radius: var(--radius-sm);
+  font-size: 13px; display: none;
+}
+.cal-day-info.show { display: block; }
+.cal-day-info .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.cal-day-info .info-label { color: var(--text-light); }
+.cal-day-info .info-val { font-weight: 600; }
+
+/* ===== Detail Page ===== */
+.detail-page {
+  position: fixed; inset: 0; background: var(--pink-bg); z-index: 300;
+  overflow-y: auto; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.23,1,0.32,1);
+  max-width: 480px; margin: 0 auto;
+}
+.detail-page.open { transform: translateX(0); }
+.detail-header {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  padding: calc(50px + env(safe-area-inset-top)) 18px 20px; position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 10px;
+}
+.detail-header .back-btn { font-size: 22px; cursor: pointer; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); color: var(--white); }
+.detail-header h2 { color: var(--white); font-size: 17px; flex: 1; }
+.detail-hero {
+  background: var(--white); border-radius: 0 0 24px 24px; padding: 0 18px 20px;
+  box-shadow: var(--shadow-soft);
+}
+.detail-img {
+  width: 100%; aspect-ratio: 4/3; border-radius: var(--radius); background: var(--pink-light);
+  display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 16px; overflow: hidden;
+}
+.detail-img img { width: 100%; height: 100%; object-fit: cover; }
+.detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.detail-stat {
+  background: var(--pink-bg); border-radius: var(--radius-sm); padding: 12px; text-align: center;
+}
+.detail-stat .ds-label { font-size: 12px; color: var(--text-light); }
+.detail-stat .ds-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+.detail-stat .ds-value.profit { color: var(--green); }
+.detail-section { padding: 16px; }
+.detail-section h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* ===== Ledger ===== */
+.month-switcher {
+  display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px;
+}
+.month-switcher button {
+  width: 36px; height: 36px; border: none; border-radius: 50%; background: var(--white);
+  font-size: 16px; cursor: pointer; box-shadow: var(--shadow-soft); color: var(--pink-deep);
+  transition: transform 0.15s;
+}
+.month-switcher button:active { transform: scale(0.85); }
+.month-switcher .month-label { font-size: 17px; font-weight: 700; min-width: 100px; text-align: center; }
+.overview-card {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  border-radius: var(--radius); padding: 20px; color: var(--white); margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.overview-card .oc-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.overview-card .oc-row:last-child { margin-bottom: 0; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.25); }
+.overview-card .oc-label { font-size: 13px; opacity: 0.9; }
+.overview-card .oc-value { font-size: 16px; font-weight: 700; }
+.overview-card .oc-value.big { font-size: 24px; }
+
+.record-card { display: flex; align-items: center; gap: 12px; }
+.record-card .record-icon {
+  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.record-card .record-info { flex: 1; min-width: 0; }
+.record-card .record-name { font-size: 14px; font-weight: 600; }
+.record-card .record-date { font-size: 12px; color: var(--text-light); }
+.record-card .record-amount { font-size: 15px; font-weight: 700; }
+.amount-in { color: var(--green); }
+.amount-out { color: var(--red); }
+
+/* ===== Action Menu ===== */
+.action-menu { display: flex; flex-direction: column; gap: 8px; }
+.action-menu-item {
+  display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--radius-sm);
+  background: var(--pink-bg); cursor: pointer; transition: transform 0.15s;
+}
+.action-menu-item:active { transform: scale(0.97); }
+.action-menu-item .am-icon { font-size: 22px; }
+.action-menu-item .am-text { font-size: 15px; font-weight: 600; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(74,51,64,0.92); color: var(--white); padding: 10px 24px; border-radius: 24px;
+  font-size: 14px; z-index: 500; opacity: 0; pointer-events: none; transition: all 0.3s;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== Misc ===== */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.quick-action {
+  background: var(--white); border-radius: var(--radius-sm); padding: 14px 8px; text-align: center;
+  cursor: pointer; box-shadow: var(--shadow-soft); transition: transform 0.2s;
+}
+.quick-action:active { transform: scale(0.92); }
+.quick-action .qa-icon { font-size: 26px; margin-bottom: 6px; }
+.quick-action .qa-label { font-size: 11px; color: var(--text-light); }
+
+.recent-list .recent-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 0;
+  border-bottom: 1px solid var(--pink-light);
+}
+.recent-list .recent-item:last-child { border-bottom: none; }
+.recent-list .recent-item .ri-icon { font-size: 20px; }
+.recent-list .recent-item .ri-text { flex: 1; font-size: 13px; }
+.recent-list .recent-item .ri-time { font-size: 11px; color: var(--text-muted); }
+
+.clothes-picker-list { max-height: 300px; overflow-y: auto; }
+.clothes-pick-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--radius-sm);
+  cursor: pointer; margin-bottom: 4px;
+}
+.clothes-pick-item:active { background: var(--pink-light); }
+.clothes-pick-item.selected { background: var(--pink-light); }
+.clothes-pick-item .cpi-icon { font-size: 24px; }
+.clothes-pick-item .cpi-name { flex: 1; font-size: 14px; }
+.clothes-pick-item .cpi-check { color: var(--pink-deep); font-size: 18px; opacity: 0; }
+.clothes-pick-item.selected .cpi-check { opacity: 1; }
+
+/* ===== Image Upload ===== */
+.img-upload-area {
+  width: 100%; aspect-ratio: 4/3; border-radius: var(--radius); background: var(--pink-bg);
+  border: 2px dashed var(--pink); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.img-upload-area:active { transform: scale(0.98); border-color: var(--pink-deep); }
+.img-upload-area .upload-placeholder { text-align: center; color: var(--text-light); }
+.img-upload-area .upload-placeholder .upload-icon { font-size: 36px; margin-bottom: 8px; }
+.img-upload-area .upload-placeholder .upload-text { font-size: 13px; }
+.img-upload-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+.img-upload-area .img-change-hint {
+  position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: var(--white);
+  text-align: center; font-size: 12px; padding: 6px; z-index: 2;
+}
+.img-upload-area.has-img { border-style: solid; }
+.img-preview-sm {
+  width: 80px; height: 80px; border-radius: 10px; background: var(--pink-light); overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0;
+}
+.img-preview-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ===== Batch Select ===== */
+.batch-bar {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-soft); margin-bottom: 12px;
+}
+.batch-bar .batch-info { flex: 1; font-size: 14px; color: var(--text); }
+.batch-bar .batch-info b { color: var(--pink-deep); }
+.batch-bar .batch-btn {
+  padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.batch-bar .batch-delete { background: #FFEBEE; color: #E53935; }
+.batch-bar .batch-cancel { background: var(--pink-light); color: var(--pink-deep); }
+.batch-bar .batch-select-all { background: var(--pink-light); color: var(--pink-deep); }
+.order-card .batch-checkbox {
+  width: 22px; height: 22px; border: 2px solid var(--pink); border-radius: 50%;
+  flex-shrink: 0; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  margin-right: 4px;
+}
+.order-card .batch-checkbox.checked { background: var(--pink); border-color: var(--pink); }
+.order-card .batch-checkbox.checked::after {
+  content: '✓'; color: var(--white); font-size: 13px; font-weight: 700;
+}
+.order-card.batch-mode { cursor: pointer; }
+.btn-batch {
+  font-size: 13px; color: var(--pink-deep); cursor: pointer; font-weight: 600; padding: 4px 10px;
+  background: var(--pink-light); border-radius: 20px;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Drawer -->
+<div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="avatar">👗</div>
+    <h2>小源租衣铺</h2>
+    <p>用心经营每一件美丽 ✨</p>
+  </div>
+  <ul class="drawer-menu">
+    <li class="active" onclick="switchTab('overview'); closeDrawer();"><span class="icon">🏠</span> 概览</li>
+    <li onclick="switchTab('shipping'); closeDrawer();"><span class="icon">📦</span> 发货排期</li>
+    <li onclick="switchTab('ledger'); closeDrawer();"><span class="icon">💰</span> 每月小结</li>
+    <li onclick="switchTab('wardrobe'); closeDrawer();"><span class="icon">👗</span> 店铺衣橱</li>
+    <li onclick="closeDrawer(); showToast('设置功能开发中~');"><span class="icon">⚙️</span> 设置</li>
+  </ul>
+  <div class="drawer-footer">小源租衣铺 v1.0 🌸</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== ICONS (SVG strings) ==================== */
+const IC = {
+  dress: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M8 3l2 4h4l2-4"/><path d="M6 7l-2 14h16l-2-14"/><path d="M8 7v14M16 7v14"/></svg>',
+  coat: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M6 3l-3 4v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-3-4"/><path d="M6 7h12"/><path d="M12 3v18"/></svg>',
+  shirt: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M8 3l2 3h4l2-3"/><path d="M6 6l-2 14h16l-2-14"/></svg>',
+  box: '<svg class="icon icon-lg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M12 5v15"/></svg>',
+  money: '<svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9a3 3 0 0 0-3-3h-1a3 3 0 0 0 0 6h1a3 3 0 0 1 0 6h-1a3 3 0 0 1-3-3"/></svg>',
+  chart: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h7v7"/></svg>',
+  clock: '<svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  calendar: '<svg class="icon icon-lg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 2v4M16 2v4"/></svg>',
+  edit: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+  bag: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  dance: '<svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M12 9v4l-3 7M12 13l3 7"/><path d="M9 9l-2 2M15 9l2 2"/></svg>',
+  shoe: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M4 20h12a2 2 0 0 0 2-2v-4l4-6-4-2-6 6H8l-4 8z"/><path d="M8 20v-4"/></svg>',
+  handbag: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M6 7h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>',
+  hat: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M4 15h16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2z"/><path d="M4 15l2-8h12l2 8"/><path d="M12 7V4"/></svg>',
+  scarf: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M6 3l12 18M6 21l12-18"/><path d="M4 8h16M4 16h16"/></svg>',
+  glove: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M8 14V7a3 3 0 0 1 6 0v7"/><path d="M8 14H6a2 2 0 0 0 0 4h12a2 2 0 0 0 0-4h-2"/><path d="M8 18v4h8v-4"/></svg>',
+  home: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/><path d="M5 10v11h14V10"/></svg>',
+  gear: '<svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  menu: '<svg class="icon icon-lg" viewBox="0 0 24 24" style="stroke-width:2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>',
+  close: '<svg class="icon icon-lg" viewBox="0 0 24 24" style="stroke-width:2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  back: '<svg class="icon icon-2xl" viewBox="0 0 24 24" style="stroke-width:2"><path d="M15 18l-6-6 6-6"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M20 6L9 17l-5-5"/></svg>',
+  truck: '<svg class="icon" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>',
+  warn: '<svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  upload: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>',
+  chartBar: '<svg class="icon" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+  clipboard: '<svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  pin: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  bolt: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  star: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/></svg>',
+  user: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  flower: '<svg class="icon icon-2xl icon-fill" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 2c2 3 4 3 6 2-1 2-1 4 2 6-3 2-3 4-2 6-2-1-4-1-6 2-2-3-4-3-6-2 1-2 1-4-2-6 3-2 3-4 2-6 2 1 4 1 6-2z" fill="currentColor" opacity="0.8"/><circle cx="12" cy="12" r="3" fill="white"/></svg>',
+};
+
+/* ==================== DATA LAYER ==================== */
+const STORE_KEY = 'xiaoyuan_rental_v1';
+
+let DB = {
+  clothes: [],
+  orders: [],
+  purchases: [],
+  incomes: [],
+  nextClothesId: 1,
+  nextOrderId: 1
+};
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      DB = JSON.parse(raw);
+      if (!DB.clothes) DB.clothes = [];
+      if (!DB.orders) DB.orders = [];
+      if (!DB.purchases) DB.purchases = [];
+      if (!DB.incomes) DB.incomes = [];
+    } else {
+      seedData();
+    }
+  } catch(e) { seedData(); }
+}
+
+function saveDB() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+}
+
+function seedData() {
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+
+  DB.clothes = [
+    { id: 1, name: '法式碎花连衣裙', icon: 'dress', price: 280, totalRent: 560, rentCount: 4, status: 'rented', note: '杏色 S码' },
+    { id: 2, name: '复古丝绒旗袍', icon: 'coat', price: 450, totalRent: 900, rentCount: 3, status: 'instock', note: '墨绿 M码' },
+    { id: 3, name: '韩系格子大衣', icon: 'coat', price: 520, totalRent: 780, rentCount: 3, status: 'instock', note: '卡其 L码' },
+    { id: 4, name: '亮片晚礼服', icon: 'dress', price: 680, totalRent: 1360, rentCount: 4, status: 'cleaning', note: '银色 S码' },
+    { id: 5, name: '森系棉麻套装', icon: 'shirt', price: 220, totalRent: 440, rentCount: 4, status: 'instock', note: '米白 M码' },
+    { id: 6, name: '赫本风小黑裙', icon: 'dress', price: 380, totalRent: 1140, rentCount: 6, status: 'rented', note: '黑色 S码' },
+  ];
+  DB.orders = [
+    { id: 1, no: 'YY20260731001', customer: '小鹿', clothesId: 1, clothesName: '法式碎花连衣裙', startDate: fmt(today), endDate: fmt(addDays(today,3)), address: '杭州市西湖区文三路xx号', status: 'pending', rent: 140, note: '' },
+    { id: 2, no: 'YY20260730002', customer: '阿月', clothesId: 6, clothesName: '赫本风小黑裙', startDate: fmt(addDays(today,-1)), endDate: fmt(addDays(today,2)), address: '上海市静安区南京西路xx号', status: 'pending', rent: 190, note: '加急' },
+    { id: 3, no: 'YY20260729003', customer: '糖糖', clothesId: 4, clothesName: '亮片晚礼服', startDate: fmt(addDays(today,-3)), endDate: fmt(addDays(today,-1)), address: '成都市锦江区春熙路xx号', status: 'received', rent: 340, note: '' },
+    { id: 4, no: 'YY20260728004', customer: '茉莉', clothesId: 2, clothesName: '复古丝绒旗袍', startDate: fmt(addDays(today,-5)), endDate: fmt(addDays(today,-2)), address: '北京市朝阳区三里屯xx号', status: 'received', rent: 300, note: '' },
+    { id: 5, no: 'YY20260727005', customer: '柚子', clothesId: 3, clothesName: '韩系格子大衣', startDate: fmt(addDays(today,2)), endDate: fmt(addDays(today,6)), address: '广州市天河区体育西路xx号', status: 'pending', rent: 260, note: '' },
+  ];
+  DB.purchases = [
+    { id: 1, date: fmt(today).slice(0,7)+'-05', name: '法式碎花连衣裙', amount: 280, note: '广州十三行进货' },
+    { id: 2, date: fmt(today).slice(0,7)+'-12', name: '亮片晚礼服', amount: 680, note: '定制款' },
+    { id: 3, date: fmt(today).slice(0,7)+'-18', name: '森系棉麻套装 x2', amount: 440, note: '批发' },
+  ];
+  DB.incomes = [
+    { id: 1, date: fmt(today).slice(0,7)+'-29', orderNo: 'YY20260729003', amount: 340, clothesName: '亮片晚礼服' },
+    { id: 2, date: fmt(today).slice(0,7)+'-28', orderNo: 'YY20260728004', amount: 300, clothesName: '复古丝绒旗袍' },
+    { id: 3, date: fmt(today).slice(0,7)+'-20', orderNo: 'YY20260720008', amount: 260, clothesName: '韩系格子大衣' },
+    { id: 4, date: fmt(today).slice(0,7)+'-15', orderNo: 'YY20260715005', amount: 140, clothesName: '法式碎花连衣裙' },
+    { id: 5, date: fmt(today).slice(0,7)+'-10', orderNo: 'YY20260710002', amount: 190, clothesName: '赫本风小黑裙' },
+  ];
+  DB.nextClothesId = 7;
+  DB.nextOrderId = 6;
+  saveDB();
+}
+
+/* ==================== HELPERS ==================== */
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+function fmtMoney(n) { return '¥' + (n||0).toFixed(0); }
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function monthStr(d) { return d.toISOString().slice(0,7); }
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function getIcon(name) { return IC[name] || IC.dress; }
+
+/* 图片显示辅助：有图片显示图片，无图显示 SVG 图标 */
+function getThumb(c) {
+  if (!c) return IC.dress;
+  if (c.photo) return '<img src="' + c.photo + '" alt="' + c.name + '">';
+  return getIcon(c.icon);
+}
+
+/* 图片压缩：将上传的图片压缩为 base64 存储 */
+function compressImage(file, maxW, maxH, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxH) { w = w * maxH / h; h = maxH; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* 批量选择状态 */
+let batchMode = false;
+let selectedOrders = new Set();
+
+/* ==================== NAVIGATION ==================== */
+let currentTab = 'overview';
+
+function switchTab(tab) {
+  currentTab = tab;
+  $$('.page').forEach(p => p.classList.remove('active'));
+  $$('.tab-item').forEach(t => t.classList.remove('active'));
+  $$('.drawer-menu li').forEach(t => t.classList.remove('active'));
+  const page = $('#page-' + tab);
+  if (page) page.classList.add('active');
+  const tabItem = $(".tab-item[data-tab='" + tab + "']");
+  if (tabItem) tabItem.classList.add('active');
+  const drawerItem = $(".drawer-menu li[data-tab='" + tab + "']");
+  if (drawerItem) drawerItem.classList.add('active');
+  const fab = $('#fab');
+  if (fab) fab.style.display = (tab === 'ledger') ? 'flex' : 'none';
+  window.scrollTo(0, 0);
+}
+
+function openDrawer() { $('#drawer').classList.add('open'); $('#drawerMask').classList.add('open'); }
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#drawerMask').classList.remove('open'); }
+
+/* ==================== RENDER APP SHELL ==================== */
+function renderShell() {
+  $('#app').innerHTML = `
+    <div class="page active" id="page-overview">
+      <div class="topbar">
+        <span class="menu-btn" onclick="openDrawer()">${IC.menu}</span>
+        <div class="title-row">
+          <div class="avatar">${IC.flower}</div>
+          <div class="brand-info">
+            <h1>小源租衣铺</h1>
+            <p>租衣店铺运营工作台</p>
+          </div>
+        </div>
+        <div class="date-badge" id="todayBadge"></div>
+      </div>
+      <div class="content" id="overviewContent"></div>
+    </div>
+    <div class="page" id="page-shipping">
+      <div class="topbar" style="padding-top:calc(54px + env(safe-area-inset-top));">
+        <span class="menu-btn" onclick="openDrawer()">${IC.menu}</span>
+        <div class="title-row">
+          <div class="brand-info">
+            <h1>${IC.box} 发货排期</h1>
+            <p>待发货订单管理</p>
+          </div>
+        </div>
+      </div>
+      <div class="content" id="shippingContent"></div>
+    </div>
+    <div class="page" id="page-ledger">
+      <div class="topbar" style="padding-top:calc(54px + env(safe-area-inset-top));">
+        <span class="menu-btn" onclick="openDrawer()">${IC.menu}</span>
+        <div class="title-row">
+          <div class="brand-info">
+            <h1>${IC.money} 每月小结</h1>
+            <p>收支账本一览</p>
+          </div>
+        </div>
+      </div>
+      <div class="content" id="ledgerContent"></div>
+    </div>
+    <div class="page" id="page-wardrobe">
+      <div class="topbar" style="padding-top:calc(54px + env(safe-area-inset-top));">
+        <span class="menu-btn" onclick="openDrawer()">${IC.menu}</span>
+        <div class="title-row">
+          <div class="brand-info">
+            <h1>${IC.dress} 店铺衣橱</h1>
+            <p>衣物库存管理</p>
+          </div>
+        </div>
+      </div>
+      <div class="content" id="wardrobeContent"></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item active" data-tab="overview" onclick="switchTab('overview')">
+        <span class="tab-icon">${IC.home}</span><span class="tab-label">概览</span>
+      </div>
+      <div class="tab-item" data-tab="shipping" onclick="switchTab('shipping')">
+        <span class="tab-icon">${IC.box}</span><span class="tab-label">发货</span>
+      </div>
+      <div class="tab-item" data-tab="ledger" onclick="switchTab('ledger')">
+        <span class="tab-icon">${IC.money}</span><span class="tab-label">账本</span>
+      </div>
+      <div class="tab-item" data-tab="wardrobe" onclick="switchTab('wardrobe')">
+        <span class="tab-icon">${IC.dress}</span><span class="tab-label">衣橱</span>
+      </div>
+    </div>
+    <button class="btn-fab" id="fab" onclick="openRecordMenu()" style="display:none;">+</button>
+    <div class="sheet-mask" id="sheetMask" onclick="closeAllSheets()"></div>
+    <div class="sheet" id="sheetMain"></div>
+    <div class="detail-page" id="detailPage"></div>
+  `;
+  $$('.drawer-menu li').forEach((li, i) => {
+    const tabs = ['overview','shipping','ledger','wardrobe',null];
+    if (tabs[i]) li.setAttribute('data-tab', tabs[i]);
+  });
+  const now = new Date();
+  $('#todayBadge').textContent = (now.getMonth()+1) + '月' + now.getDate() + '日';
+}
+
+/* ==================== OVERVIEW ==================== */
+function renderOverview() {
+  const today = todayStr();
+  const thisMonth = today.slice(0,7);
+  const pendingToday = DB.orders.filter(o => o.status === 'pending' && o.startDate <= today).length;
+  const monthIncome = DB.incomes.filter(i => i.date.startsWith(thisMonth)).reduce((s,i) => s+i.amount, 0);
+  const monthPurchase = DB.purchases.filter(p => p.date.startsWith(thisMonth)).reduce((s,p) => s+p.amount, 0);
+  const netProfit = monthIncome - monthPurchase;
+  const recentOrders = [...DB.orders].sort((a,b) => b.no.localeCompare(a.no)).slice(0,4);
+
+  $('#overviewContent').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon">${IC.box}</div>
+        <div class="stat-label">今日待发货</div>
+        <div class="stat-value">${pendingToday}<span class="stat-unit">单</span></div>
+        <div class="stat-deco">${IC.box}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">${IC.money}</div>
+        <div class="stat-label">本月租衣收入</div>
+        <div class="stat-value">${fmtMoney(monthIncome)}</div>
+        <div class="stat-deco">${IC.money}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">${IC.dress}</div>
+        <div class="stat-label">衣橱总件数</div>
+        <div class="stat-value">${DB.clothes.length}<span class="stat-unit">件</span></div>
+        <div class="stat-deco">${IC.dress}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">${IC.chart}</div>
+        <div class="stat-label">本月净收益</div>
+        <div class="stat-value" style="color:${netProfit>=0?'var(--green)':'var(--red)'}">${fmtMoney(netProfit)}</div>
+        <div class="stat-deco">${IC.chart}</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title"><h3>${IC.bolt} 快捷操作</h3></div>
+      <div class="quick-actions">
+        <div class="quick-action" onclick="openOrderSheet()">
+          <div class="qa-icon">${IC.edit}</div>
+          <div class="qa-label">新增订单</div>
+        </div>
+        <div class="quick-action" onclick="openClothesSheet()">
+          <div class="qa-icon">${IC.dress}</div>
+          <div class="qa-label">新增衣物</div>
+        </div>
+        <div class="quick-action" onclick="openRecordMenu()">
+          <div class="qa-icon">${IC.money}</div>
+          <div class="qa-label">记一笔账</div>
+        </div>
+        <div class="quick-action" onclick="switchTab('wardrobe')">
+          <div class="qa-icon">${IC.clipboard}</div>
+          <div class="qa-label">查看衣橱</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">
+        <h3>${IC.clipboard} 最近订单</h3>
+        <span class="more" onclick="switchTab('shipping')">查看全部 ›</span>
+      </div>
+      <div id="recentOrdersList">
+        ${recentOrders.length ? recentOrders.map(o => renderOrderCard(o)).join('') : '<div class="empty"><div class="empty-icon">${IC.box}</div><p>暂无订单</p></div>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderOrderCard(o) {
+  const statusMap = { pending: '待发货', shipped: '已发货', received: '已签收' };
+  const cls = o.status === 'pending' ? 'status-pending' : o.status === 'shipped' ? 'status-shipped' : 'status-received';
+  const c = DB.clothes.find(c => c.id === o.clothesId);
+  return `
+    <div class="card order-card" onclick="openOrderDetail(${o.id})">
+      <div class="order-thumb">${getThumb(c)}</div>
+      <div class="order-info">
+        <div class="order-top">
+          <span class="order-no">${o.no}</span>
+          <span class="order-status ${cls}">${statusMap[o.status]}</span>
+        </div>
+        <div class="order-goods">${o.clothesName} · ${o.customer}</div>
+        <div class="order-meta">
+          <span>${IC.calendar} ${o.startDate} ~ ${o.endDate}</span>
+          <span>${IC.money} ${fmtMoney(o.rent)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ==================== SHIPPING ==================== */
+function renderShipping() {
+  const today = todayStr();
+  const weekLater = new Date(); weekLater.setDate(weekLater.getDate()+7);
+  const weekStr = weekLater.toISOString().slice(0,10);
+  const pendingToday = DB.orders.filter(o => o.status === 'pending' && o.startDate <= today).length;
+  const pendingWeek = DB.orders.filter(o => o.status === 'pending' && o.startDate >= today && o.startDate <= weekStr).length;
+  const overdue = DB.orders.filter(o => o.status === 'pending' && o.endDate < today).length;
+  const sorted = [...DB.orders].sort((a,b) => b.startDate.localeCompare(a.startDate));
+
+  $('#shippingContent').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon">${IC.clock}</div>
+        <div class="stat-label">今日待发货</div>
+        <div class="stat-value" style="color:var(--orange)">${pendingToday}<span class="stat-unit">单</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">${IC.calendar}</div>
+        <div class="stat-label">本周待发货</div>
+        <div class="stat-value">${pendingWeek}<span class="stat-unit">单</span></div>
+      </div>
+    </div>
+    ${overdue > 0 ? '<div class="card" style="background:#FFEBEE;border:1px solid #FFCDD2;"><span style="color:#E53935;font-weight:600;">' + IC.warn + ' ' + overdue + ' 笔订单已逾期，请尽快处理！</span></div>' : ''}
+    <div class="section">
+      <div class="section-title">
+        <h3>${IC.box} 订单列表</h3>
+        <div style="display:flex;gap:8px;">
+          ${batchMode ? '<span class="btn-batch" onclick="selectAllOrders()">' + (selectedOrders.size === sorted.length ? '取消全选' : '全选') + '</span><span class="btn-batch" onclick="exitBatchMode()">取消</span>' : '<span class="btn-add" onclick="openOrderSheet()">+ 新增</span><span class="btn-batch" onclick="enterBatchMode()">批量</span>'}
+        </div>
+      </div>
+      ${batchMode ? '<div class="batch-bar"><div class="batch-info">已选择 <b>' + selectedOrders.size + '</b> 笔订单</div><button class="batch-btn batch-select-all" onclick="selectAllOrders()">' + (selectedOrders.size === sorted.length ? '取消全选' : '全选') + '</button><button class="batch-btn batch-cancel" onclick="exitBatchMode()">取消</button><button class="batch-btn batch-delete" onclick="batchDeleteOrders()">' + IC.trash + ' 删除</button></div>' : ''}
+      <div id="orderList">
+        ${sorted.length ? sorted.map(o => renderOrderCardFull(o)).join('') : '<div class="empty"><div class="empty-icon">${IC.box}</div><p>暂无订单，点击右上角添加~</p></div>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderOrderCardFull(o) {
+  const statusMap = { pending: '待发货', shipped: '已发货', received: '已签收' };
+  const cls = o.status === 'pending' ? 'status-pending' : o.status === 'shipped' ? 'status-shipped' : 'status-received';
+  const isOverdue = o.status === 'pending' && o.endDate < todayStr();
+  const c = DB.clothes.find(c => c.id === o.clothesId);
+  const checked = selectedOrders.has(o.id) ? 'checked' : '';
+  const clickHandler = batchMode ? 'onclick="toggleOrderSelect(' + o.id + ')"' : 'onclick="openOrderDetail(' + o.id + ')"';
+  return `
+    <div class="card order-card ${batchMode ? 'batch-mode' : ''}" ${clickHandler}>
+      ${batchMode ? '<div class="batch-checkbox ' + checked + '"></div>' : ''}
+      <div class="order-thumb">${getThumb(c)}</div>
+      <div class="order-info">
+        <div class="order-top">
+          <span class="order-no">${o.no}</span>
+          <span class="order-status ${isOverdue ? 'status-overdue' : cls}">${isOverdue ? '已逾期' : statusMap[o.status]}</span>
+        </div>
+        <div class="order-goods">${o.clothesName} · ${o.customer}</div>
+        <div class="order-meta">
+          <span>${IC.calendar} ${o.startDate} ~ ${o.endDate}</span>
+          <span>${IC.money} ${fmtMoney(o.rent)}</span>
+        </div>
+        <div class="order-meta"><span>${IC.pin} ${o.address}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function openOrderDetail(id) {
+  const o = DB.orders.find(x => x.id === id);
+  if (!o) return;
+  const statusMap = { pending: '待发货', shipped: '已发货', received: '已签收' };
+  const c = DB.clothes.find(c => c.id === o.clothesId);
+  const sheetContent = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.box} 订单详情</h2>
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:13px;color:var(--text-light);">${o.no}</span>
+        <span class="order-status ${o.status==='pending'?'status-pending':o.status==='shipped'?'status-shipped':'status-received'}">${statusMap[o.status]}</span>
+      </div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;"><div class="img-preview-sm" style="width:40px;height:40px;font-size:20px;">${getThumb(c)}</div> ${o.clothesName}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:4px;">${IC.user} 租客：${o.customer}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:4px;">${IC.calendar} 租期：${o.startDate} ~ ${o.endDate}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:4px;">${IC.money} 租金：${fmtMoney(o.rent)}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:4px;">${IC.pin} 地址：${o.address}</div>
+      ${o.note ? '<div style="font-size:14px;color:var(--text-light);">${IC.edit} 备注：' + o.note + '</div>' : ''}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${o.status === 'pending' ? '<button class="btn-small btn-confirm" onclick="updateOrderStatus('+o.id+',' + "'shipped'" + ')">${IC.truck} 标记已发货</button>' : ''}
+      ${o.status === 'shipped' ? '<button class="btn-small btn-confirm" onclick="updateOrderStatus('+o.id+',' + "'received'" + ')">${IC.check} 标记已签收</button>' : ''}
+      ${o.status !== 'received' ? '<button class="btn-small btn-outline" onclick="updateOrderStatus('+o.id+',' + "'received'" + ')">直接完成</button>' : ''}
+      <button class="btn-small btn-danger" onclick="deleteOrder('+o.id+')">${IC.trash} 删除</button>
+    </div>
+  `;
+  openSheet(sheetContent);
+}
+
+function updateOrderStatus(id, status) {
+  const o = DB.orders.find(x => x.id === id);
+  if (!o) return;
+  const oldStatus = o.status;
+  o.status = status;
+  if (status === 'received' && oldStatus !== 'received') {
+    DB.incomes.push({
+      id: (DB.incomes.length ? Math.max(...DB.incomes.map(i=>i.id)) : 0) + 1,
+      date: todayStr(), orderNo: o.no, amount: o.rent, clothesName: o.clothesName
+    });
+    const c = DB.clothes.find(c => c.id === o.clothesId);
+    if (c) {
+      c.totalRent += o.rent;
+      c.rentCount += 1;
+      c.status = 'cleaning';
+    }
+    showToast('订单已完成，已自动记账！');
+  } else if (status === 'shipped') {
+    const c = DB.clothes.find(c => c.id === o.clothesId);
+    if (c) c.status = 'rented';
+    showToast('已标记发货！');
+  }
+  saveDB();
+  closeAllSheets();
+  renderShipping();
+  renderOverview();
+}
+
+function deleteOrder(id) {
+  if (!confirm('确认删除该订单？')) return;
+  DB.orders = DB.orders.filter(o => o.id !== id);
+  saveDB();
+  closeAllSheets();
+  renderShipping();
+  renderOverview();
+  showToast('已删除');
+}
+
+/* 批量选择操作 */
+function enterBatchMode() {
+  batchMode = true;
+  selectedOrders.clear();
+  renderShipping();
+}
+function exitBatchMode() {
+  batchMode = false;
+  selectedOrders.clear();
+  renderShipping();
+}
+function toggleOrderSelect(id) {
+  if (selectedOrders.has(id)) selectedOrders.delete(id);
+  else selectedOrders.add(id);
+  renderShipping();
+}
+function selectAllOrders() {
+  const sorted = [...DB.orders].sort((a,b) => b.startDate.localeCompare(a.startDate));
+  if (selectedOrders.size === sorted.length) {
+    selectedOrders.clear();
+  } else {
+    sorted.forEach(o => selectedOrders.add(o.id));
+  }
+  renderShipping();
+}
+function batchDeleteOrders() {
+  if (selectedOrders.size === 0) { showToast('请先选择订单'); return; }
+  if (!confirm('确认删除选中的 ' + selectedOrders.size + ' 笔订单？此操作不可撤销。')) return;
+  DB.orders = DB.orders.filter(o => !selectedOrders.has(o.id));
+  saveDB();
+  exitBatchMode();
+  renderOverview();
+  showToast('已删除 ' + selectedOrders.size + ' 笔订单');
+  selectedOrders.clear();
+}
+
+/* ==================== ORDER SHEET ==================== */
+function openOrderSheet() {
+  const today = todayStr();
+  const defaultEnd = new Date(); defaultEnd.setDate(defaultEnd.getDate()+3);
+  const endStr = defaultEnd.toISOString().slice(0,10);
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.edit} 新增订单</h2>
+    <div class="form-group">
+      <label>选择衣物 *</label>
+      <div id="clothesPicker" class="clothes-picker-list">
+        ${DB.clothes.map(c => `
+          <div class="clothes-pick-item" onclick="pickClothes(${c.id})" data-cid="${c.id}">
+            <span class="cpi-icon">${getIcon(c.icon)}</span>
+            <span class="cpi-name">${c.name} ${c.status!=='instock'?'<span style="font-size:11px;color:var(--orange)">('+{instock:'在库',rented:'出租中',cleaning:'清洗中'}[c.status]+')</span>':''}</span>
+            <span class="cpi-check">${IC.check}</span>
+          </div>
+        `).join('')}
+      </div>
+      <input type="hidden" id="o_clothesId">
+    </div>
+    <div class="form-group">
+      <label>租客昵称 *</label>
+      <input type="text" id="o_customer" placeholder="如：小鹿">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>租赁开始 *</label>
+        <input type="date" id="o_start" value="${today}">
+      </div>
+      <div class="form-group">
+        <label>归还日期 *</label>
+        <input type="date" id="o_end" value="${endStr}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>租金 ¥</label>
+        <input type="number" id="o_rent" placeholder="如 140">
+      </div>
+      <div class="form-group">
+        <label>订单号（选填）</label>
+        <input type="text" id="o_no" placeholder="自动生成">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>收货地址</label>
+      <textarea id="o_address" placeholder="省市区+详细地址"></textarea>
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="o_note" placeholder="选填">
+    </div>
+    <div id="conflictWarn" style="display:none;margin-bottom:12px;padding:10px;background:#FFF3E0;border-radius:10px;font-size:13px;color:#E89100;"></div>
+    <button class="btn-primary" onclick="saveOrder()">保存订单</button>
+  `;
+  openSheet(content);
+}
+
+let pickedClothesId = null;
+function pickClothes(id) {
+  pickedClothesId = id;
+  $('#o_clothesId').value = id;
+  $$('.clothes-pick-item').forEach(el => el.classList.remove('selected'));
+  $(".clothes-pick-item[data-cid='" + id + "']").classList.add('selected');
+  checkConflict();
+}
+
+function checkConflict() {
+  const start = $('#o_start') ? $('#o_start').value : '';
+  const end = $('#o_end') ? $('#o_end').value : '';
+  const warn = $('#conflictWarn');
+  if (!start || !end || !pickedClothesId || !warn) { if(warn) warn.style.display='none'; return; }
+  const conflicts = DB.orders.filter(o =>
+    o.clothesId === pickedClothesId && o.status !== 'received' &&
+    !(o.endDate < start || o.startDate > end)
+  );
+  if (conflicts.length) {
+    warn.style.display = 'block';
+    warn.innerHTML = IC.warn + ' 该衣物在所选日期已有 ' + conflicts.length + ' 笔租单（' + conflicts.map(c=>c.startDate+'~'+c.endDate).join('、') + '），可能冲突！';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+function saveOrder() {
+  const customer = $('#o_customer').value.trim();
+  const start = $('#o_start').value;
+  const end = $('#o_end').value;
+  const rent = parseFloat($('#o_rent').value) || 0;
+  const address = $('#o_address').value.trim();
+  const note = $('#o_note').value.trim();
+  if (!pickedClothesId) { showToast('请先选择衣物'); return; }
+  if (!customer) { showToast('请输入租客昵称'); return; }
+  if (!start || !end) { showToast('请选择租赁日期'); return; }
+  if (end < start) { showToast('归还日期不能早于开始日期'); return; }
+  const c = DB.clothes.find(x => x.id === pickedClothesId);
+  const no = $('#o_no').value.trim() || ('YY' + new Date().toISOString().slice(0,10).replace(/-/g,'') + String(DB.nextOrderId).padStart(3,'0'));
+  DB.orders.push({
+    id: DB.nextOrderId++,
+    no, customer, clothesId: pickedClothesId, clothesName: c.name,
+    startDate: start, endDate: end, address, status: 'pending', rent, note
+  });
+  saveDB();
+  closeAllSheets();
+  pickedClothesId = null;
+  showToast('订单已添加！');
+  renderShipping();
+  renderOverview();
+}
+
+/* ==================== WARDROBE ==================== */
+let wardrobeFilter = 'all';
+let searchKeyword = '';
+
+function renderWardrobe() {
+  $('#wardrobeContent').innerHTML = `
+    <div class="wardrobe-toolbar">
+      <input type="text" class="search-box" placeholder="搜索衣物名称..." oninput="onSearch(this.value)" value="${searchKeyword}">
+      <div class="filter-tabs">
+        <div class="filter-tab ${wardrobeFilter==='all'?'active':''}" onclick="setFilter('all')">全部 ${DB.clothes.length}</div>
+        <div class="filter-tab ${wardrobeFilter==='instock'?'active':''}" onclick="setFilter('instock')">在库 ${DB.clothes.filter(c=>c.status==='instock').length}</div>
+        <div class="filter-tab ${wardrobeFilter==='rented'?'active':''}" onclick="setFilter('rented')">出租中 ${DB.clothes.filter(c=>c.status==='rented').length}</div>
+        <div class="filter-tab ${wardrobeFilter==='cleaning'?'active':''}" onclick="setFilter('cleaning')">清洗中 ${DB.clothes.filter(c=>c.status==='cleaning').length}</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">
+        <h3>${IC.dress} 我的衣橱</h3>
+        <span class="btn-add" onclick="openClothesSheet()">+ 新增</span>
+      </div>
+      <div class="wardrobe-grid" id="wardrobeGrid"></div>
+    </div>
+  `;
+  renderWardrobeGrid();
+}
+
+function renderWardrobeGrid() {
+  let list = DB.clothes;
+  if (wardrobeFilter !== 'all') list = list.filter(c => c.status === wardrobeFilter);
+  if (searchKeyword) list = list.filter(c => c.name.includes(searchKeyword) || (c.note||'').includes(searchKeyword));
+  const grid = $('#wardrobeGrid');
+  if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">${IC.dress}</div><p>暂无衣物，点击右上角添加~</p></div>';
+    return;
+  }
+  const statusMap = { instock: ['在库','tag-instock'], rented: ['出租中','tag-rented'], cleaning: ['清洗中','tag-cleaning'] };
+  grid.innerHTML = list.map(c => `
+    <div class="clothes-card" onclick="openClothesDetail(${c.id})">
+      <div class="clothes-img">
+        ${getThumb(c)}
+        <span class="clothes-status-tag ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span>
+      </div>
+      <div class="clothes-info">
+        <div class="clothes-name">${c.name}</div>
+        <div class="clothes-meta">
+          <span>租${c.rentCount}次</span>
+          <span class="rent">${fmtMoney(c.totalRent)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setFilter(f) { wardrobeFilter = f; renderWardrobe(); }
+function onSearch(v) { searchKeyword = v; renderWardrobeGrid(); }
+
+/* ==================== CLOTHES DETAIL ==================== */
+let calendarDate = new Date();
+let calendarClothesId = null;
+
+function openClothesDetail(id) {
+  const c = DB.clothes.find(x => x.id === id);
+  if (!c) return;
+  calendarClothesId = id;
+  calendarDate = new Date();
+  const profit = c.totalRent - c.price;
+  const profitRate = c.price > 0 ? ((profit / c.price) * 100).toFixed(0) : 0;
+  const historyOrders = DB.orders.filter(o => o.clothesId === id).sort((a,b) => b.startDate.localeCompare(a.startDate));
+  const statusMap = { instock: ['在库','tag-instock'], rented: ['出租中','tag-rented'], cleaning: ['清洗中','tag-cleaning'] };
+
+  $('#detailPage').innerHTML = `
+    <div class="detail-header">
+      <span class="back-btn" onclick="closeDetail()">${IC.back}</span>
+      <h2>衣物详情</h2>
+    </div>
+    <div class="detail-hero">
+      <div class="detail-img">${getThumb(c)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">${c.name}</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:2px;">${c.note||'—'}</div>
+        </div>
+        <span class="clothes-status-tag ${statusMap[c.status][1]}" style="position:static;font-size:12px;padding:4px 12px;">${statusMap[c.status][0]}</span>
+      </div>
+      <div class="detail-stats">
+        <div class="detail-stat">
+          <div class="ds-label">进货价</div>
+          <div class="ds-value">${fmtMoney(c.price)}</div>
+        </div>
+        <div class="detail-stat">
+          <div class="ds-label">累计租金</div>
+          <div class="ds-value" style="color:var(--pink-deep)">${fmtMoney(c.totalRent)}</div>
+        </div>
+        <div class="detail-stat">
+          <div class="ds-label">租出次数</div>
+          <div class="ds-value">${c.rentCount}<span style="font-size:13px;">次</span></div>
+        </div>
+        <div class="detail-stat">
+          <div class="ds-label">利润率</div>
+          <div class="ds-value ${profit>=0?'profit':''}" style="${profit<0?'color:var(--red)':''}">${profitRate}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>${IC.calendar} 占用日历</h3>
+      <div id="calendarBox"></div>
+      <div class="cal-day-info" id="calDayInfo"></div>
+    </div>
+    <div class="detail-section">
+      <h3>${IC.clipboard} 历史租单 (${historyOrders.length})</h3>
+      ${historyOrders.length ? historyOrders.map(o => `
+        <div class="card" style="margin-bottom:8px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:600;">${o.customer}</span>
+            <span style="font-size:13px;color:var(--pink-deep);font-weight:600;">${fmtMoney(o.rent)}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-light);">${o.startDate} ~ ${o.endDate} · ${o.no}</div>
+        </div>
+      `).join('') : '<div class="empty"><div class="empty-icon">${IC.clipboard}</div><p>暂无租单记录</p></div>'}
+    </div>
+    <div class="detail-section">
+      <button class="btn-secondary" onclick="editClothes(${c.id})">${IC.edit} 编辑信息</button>
+      <button class="btn-secondary" style="border-color:var(--red);color:var(--red);" onclick="deleteClothes(${c.id})">${IC.trash} 删除衣物</button>
+    </div>
+  `;
+  $('#detailPage').classList.add('open');
+  renderCalendar();
+}
+
+function closeDetail() { $('#detailPage').classList.remove('open'); }
+
+function renderCalendar() {
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const orders = DB.orders.filter(o => o.clothesId === calendarClothesId && o.status !== 'received');
+  const occupiedMap = {};
+  orders.forEach(r => {
+    const s = new Date(r.start);
+    const e = new Date(r.end);
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+      const ds = d.toISOString().slice(0,10);
+      occupiedMap[ds] = r;
+    }
+  });
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  let html = `
+    <div class="calendar">
+      <div class="calendar-header">
+        <div class="cal-title">${year}年 ${monthNames[month]}</div>
+        <div class="cal-nav">
+          <button onclick="calPrev()">‹</button>
+          <button onclick="calNext()">›</button>
+        </div>
+      </div>
+      <div class="calendar-week">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+      <div class="calendar-days">
+  `;
+  for (let i = startWeekday - 1; i >= 0; i--) {
+    html += '<div class="cal-day other-month">' + (prevMonthDays - i) + '</div>';
+  }
+  const today = todayStr();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isToday = dateStr === today;
+    const occ = occupiedMap[dateStr];
+    let classes = 'cal-day';
+    if (isToday) classes += ' today';
+    if (occ) classes += ' occupied';
+    html += '<div class="' + classes + '" onclick="calDayClick(' + "'" + dateStr + "'" + ')">' + d + '</div>';
+  }
+  const totalCells = startWeekday + daysInMonth;
+  const remain = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= remain; d++) {
+    html += '<div class="cal-day other-month">' + d + '</div>';
+  }
+  html += '</div></div>';
+  const box = $('#calendarBox');
+  if (box) box.innerHTML = html;
+}
+
+function calPrev() {
+  calendarDate.setMonth(calendarDate.getMonth()-1);
+  renderCalendar();
+  $('#calDayInfo').classList.remove('show');
+}
+function calNext() {
+  calendarDate.setMonth(calendarDate.getMonth()+1);
+  renderCalendar();
+  $('#calDayInfo').classList.remove('show');
+}
+function calDayClick(dateStr) {
+  const orders = DB.orders.filter(o => o.clothesId === calendarClothesId && o.status !== 'received' && !(o.endDate < dateStr || o.startDate > dateStr));
+  const info = $('#calDayInfo');
+  if (orders.length) {
+    info.innerHTML = orders.map(o => `
+      <div class="info-row">
+        <span class="info-label">${IC.calendar} ${dateStr}</span>
+        <span class="info-val">${o.customer}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">${o.no}</span>
+        <span class="info-val">${o.startDate} ~ ${o.endDate}</span>
+      </div>
+    `).join('');
+    info.classList.add('show');
+  } else {
+    info.innerHTML = '<div class="info-row"><span class="info-label">${IC.calendar} ' + dateStr + '</span><span class="info-val" style="color:var(--green)">空闲可租</span></div>';
+    info.classList.add('show');
+  }
+}
+
+/* ==================== CLOTHES SHEET ==================== */
+function openClothesSheet() {
+  const icons = ['dress','coat','shirt','dance','shoe','handbag','hat','scarf','glove'];
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.dress} 新增衣物</h2>
+    <div class="form-group">
+      <label>衣物图片</label>
+      <div class="img-upload-area" id="imgUploadArea" onclick="document.getElementById('c_photo').click()">
+        <div class="upload-placeholder">
+          <div class="upload-icon">${IC.dress}</div>
+          <div class="upload-text">点击拍照或从相册选择</div>
+        </div>
+      </div>
+      <input type="file" id="c_photo" accept="image/*" style="display:none;" onchange="handlePhotoUpload(this)">
+    </div>
+    <div class="form-group">
+      <label>衣物名称 *</label>
+      <input type="text" id="c_name" placeholder="如：法式碎花连衣裙">
+    </div>
+    <div class="form-group">
+      <label>选择图标（无图时显示）</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="emojiPicker">
+        ${icons.map((e,i) => `
+          <div onclick="pickEmoji('${e}')" data-emoji="${e}" class="clothes-pick-item ${i===0?'selected':''}" style="padding:8px 12px;border-radius:10px;cursor:pointer;"><span class="cpi-icon">${getIcon(e)}</span></div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>进货价 ¥ *</label>
+        <input type="number" id="c_price" placeholder="如 280">
+      </div>
+      <div class="form-group">
+        <label>初始状态</label>
+        <select id="c_status">
+          <option value="instock">在库</option>
+          <option value="rented">出租中</option>
+          <option value="cleaning">清洗中</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="c_note" placeholder="如：杏色 S码">
+    </div>
+    <button class="btn-primary" onclick="saveClothes()">保存</button>
+  `;
+  openSheet(content);
+  pickedPhoto = null;
+}
+
+let pickedEmoji = 'dress';
+let pickedPhoto = null;
+
+function pickEmoji(e) {
+  pickedEmoji = e;
+  $$('#emojiPicker .clothes-pick-item').forEach(el => el.classList.remove('selected'));
+  $("#emojiPicker [data-emoji='" + e + "']").classList.add('selected');
+}
+
+function handlePhotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  compressImage(file, 600, 800, 0.7, function(dataUrl) {
+    pickedPhoto = dataUrl;
+    const area = $('#imgUploadArea');
+    if (area) {
+      area.classList.add('has-img');
+      area.innerHTML = '<img src="' + dataUrl + '"><div class="img-change-hint">点击更换图片</div>';
+    }
+  });
+}
+
+function saveClothes() {
+  const name = $('#c_name').value.trim();
+  const price = parseFloat($('#c_price').value) || 0;
+  const status = $('#c_status').value;
+  const note = $('#c_note').value.trim();
+  if (!name) { showToast('请输入衣物名称'); return; }
+  if (price <= 0) { showToast('请输入进货价'); return; }
+  DB.clothes.push({
+    id: DB.nextClothesId++, name, icon: pickedEmoji, photo: pickedPhoto, price,
+    totalRent: 0, rentCount: 0, status, note
+  });
+  saveDB();
+  closeAllSheets();
+  pickedPhoto = null;
+  showToast('衣物已添加！');
+  renderWardrobe();
+  renderOverview();
+}
+
+function editClothes(id) {
+  const c = DB.clothes.find(x => x.id === id);
+  if (!c) return;
+  pickedEmoji = c.icon || 'dress';
+  pickedPhoto = c.photo || null;
+  const icons = ['dress','coat','shirt','dance','shoe','handbag','hat','scarf','glove'];
+  const imgAreaHtml = pickedPhoto
+    ? '<img src="' + pickedPhoto + '"><div class="img-change-hint">点击更换图片</div>'
+    : '<div class="upload-placeholder"><div class="upload-icon">' + IC.dress + '</div><div class="upload-text">点击拍照或从相册选择</div></div>';
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.edit} 编辑衣物</h2>
+    <div class="form-group">
+      <label>衣物图片</label>
+      <div class="img-upload-area ${pickedPhoto?'has-img':''}" id="imgUploadArea" onclick="document.getElementById('c_photo').click()">
+        ${imgAreaHtml}
+      </div>
+      <input type="file" id="c_photo" accept="image/*" style="display:none;" onchange="handlePhotoUpload(this)">
+      ${pickedPhoto ? '<div style="text-align:center;margin-top:8px;"><span class="btn-batch" style="background:#FFEBEE;color:#E53935;" onclick="removePhoto()">移除图片</span></div>' : ''}
+    </div>
+    <div class="form-group">
+      <label>衣物名称 *</label>
+      <input type="text" id="c_name" value="${c.name}">
+    </div>
+    <div class="form-group">
+      <label>选择图标（无图时显示）</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="emojiPicker">
+        ${icons.map(e => `
+          <div onclick="pickEmoji('${e}')" data-emoji="${e}" class="clothes-pick-item ${e===pickedEmoji?'selected':''}" style="padding:8px 12px;border-radius:10px;cursor:pointer;"><span class="cpi-icon">${getIcon(e)}</span></div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>进货价 ¥</label>
+        <input type="number" id="c_price" value="${c.price}">
+      </div>
+      <div class="form-group">
+        <label>状态</label>
+        <select id="c_status">
+          <option value="instock" ${c.status==='instock'?'selected':''}>在库</option>
+          <option value="rented" ${c.status==='rented'?'selected':''}>出租中</option>
+          <option value="cleaning" ${c.status==='cleaning'?'selected':''}>清洗中</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="c_note" value="${c.note||''}">
+    </div>
+    <button class="btn-primary" onclick="saveEditClothes(${id})">保存修改</button>
+  `;
+  openSheet(content);
+}
+
+function removePhoto() {
+  pickedPhoto = null;
+  const area = $('#imgUploadArea');
+  if (area) {
+    area.classList.remove('has-img');
+    area.innerHTML = '<div class="upload-placeholder"><div class="upload-icon">' + IC.dress + '</div><div class="upload-text">点击拍照或从相册选择</div></div>';
+  }
+}
+
+function saveEditClothes(id) {
+  const c = DB.clothes.find(x => x.id === id);
+  if (!c) return;
+  c.name = $('#c_name').value.trim();
+  c.price = parseFloat($('#c_price').value) || 0;
+  c.status = $('#c_status').value;
+  c.note = $('#c_note').value.trim();
+  c.icon = pickedEmoji;
+  c.photo = pickedPhoto;
+  saveDB();
+  closeAllSheets();
+  pickedPhoto = null;
+  showToast('已保存修改！');
+  openClothesDetail(id);
+  renderWardrobe();
+}
+
+function deleteClothes(id) {
+  if (!confirm('确认删除该衣物？相关订单将保留但不再关联。')) return;
+  DB.clothes = DB.clothes.filter(c => c.id !== id);
+  saveDB();
+  closeDetail();
+  renderWardrobe();
+  renderOverview();
+  showToast('已删除');
+}
+
+/* ==================== LEDGER ==================== */
+let ledgerDate = new Date();
+
+function renderLedger() {
+  const ym = monthStr(ledgerDate);
+  const monthName = ledgerDate.getFullYear() + '年' + (ledgerDate.getMonth()+1) + '月';
+  const purchases = DB.purchases.filter(p => p.date.startsWith(ym)).sort((a,b) => b.date.localeCompare(a.date));
+  const incomes = DB.incomes.filter(i => i.date.startsWith(ym)).sort((a,b) => b.date.localeCompare(a.date));
+  const totalPurchase = purchases.reduce((s,p) => s+p.amount, 0);
+  const totalIncome = incomes.reduce((s,i) => s+i.amount, 0);
+  const netProfit = totalIncome - totalPurchase;
+  const rentedCount = DB.orders.filter(o => o.status === 'received' && o.startDate.startsWith(ym)).length;
+
+  $('#ledgerContent').innerHTML = `
+    <div class="month-switcher">
+      <button onclick="ledgerPrev()">‹</button>
+      <span class="month-label">${monthName}</span>
+      <button onclick="ledgerNext()">›</button>
+    </div>
+    <div class="overview-card">
+      <div class="oc-row">
+        <span class="oc-label">${IC.money} 进货开销</span>
+        <span class="oc-value">${fmtMoney(totalPurchase)}</span>
+      </div>
+      <div class="oc-row">
+        <span class="oc-label">${IC.money} 租衣收入</span>
+        <span class="oc-value">${fmtMoney(totalIncome)}</span>
+      </div>
+      <div class="oc-row">
+        <span class="oc-label">${IC.box} 已出租件数</span>
+        <span class="oc-value">${rentedCount} 件</span>
+      </div>
+      <div class="oc-row">
+        <span class="oc-label">${IC.chart} 净收益</span>
+        <span class="oc-value big" style="color:${netProfit>=0?'#fff':'#FFE0B2'}">${netProfit>=0?'+':''}${fmtMoney(netProfit)}</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title"><h3>${IC.money} 收入记录 (${incomes.length})</h3></div>
+      ${incomes.length ? incomes.map(i => `
+        <div class="card record-card">
+          <div class="record-icon" style="background:#E8F5E9;">${IC.money}</div>
+          <div class="record-info">
+            <div class="record-name">${i.clothesName}</div>
+            <div class="record-date">${i.date} · ${i.orderNo}</div>
+          </div>
+          <div class="record-amount amount-in">+${fmtMoney(i.amount)}</div>
+        </div>
+      `).join('') : '<div class="empty"><div class="empty-icon">${IC.money}</div><p>本月暂无收入记录</p></div>'}
+    </div>
+    <div class="section">
+      <div class="section-title"><h3>${IC.bag} 进货记录 (${purchases.length})</h3></div>
+      ${purchases.length ? purchases.map(p => `
+        <div class="card record-card">
+          <div class="record-icon" style="background:#FFEBEE;">${IC.bag}</div>
+          <div class="record-info">
+            <div class="record-name">${p.name}</div>
+            <div class="record-date">${p.date} ${p.note?'· '+p.note:''}</div>
+          </div>
+          <div class="record-amount amount-out">-${fmtMoney(p.amount)}</div>
+        </div>
+      `).join('') : '<div class="empty"><div class="empty-icon">${IC.bag}</div><p>本月暂无进货记录</p></div>'}
+    </div>
+    <div class="section">
+      <button class="btn-secondary" onclick="exportMonth()">${IC.upload} 导出本月数据</button>
+    </div>
+  `;
+}
+
+function ledgerPrev() { ledgerDate.setMonth(ledgerDate.getMonth()-1); renderLedger(); }
+function ledgerNext() { ledgerDate.setMonth(ledgerDate.getMonth()+1); renderLedger(); }
+
+function exportMonth() {
+  const ym = monthStr(ledgerDate);
+  const monthName = ledgerDate.getFullYear() + '年' + (ledgerDate.getMonth()+1) + '月';
+  const purchases = DB.purchases.filter(p => p.date.startsWith(ym));
+  const incomes = DB.incomes.filter(i => i.date.startsWith(ym));
+  const totalP = purchases.reduce((s,p)=>s+p.amount,0);
+  const totalI = incomes.reduce((s,i)=>s+i.amount,0);
+  const net = totalI - totalP;
+  let csv = '\ufeff小源租衣铺 - ' + monthName + '经营小结\n\n';
+  csv += '项目,金额\n';
+  csv += '进货开销,' + totalP + '\n';
+  csv += '租衣收入,' + totalI + '\n';
+  csv += '净收益,' + net + '\n\n';
+  csv += '--- 收入明细 ---\n';
+  csv += '日期,订单号,商品,金额\n';
+  incomes.forEach(i => { csv += i.date + ',' + i.orderNo + ',' + i.clothesName + ',' + i.amount + '\n'; });
+  csv += '\n--- 进货明细 ---\n';
+  csv += '日期,商品,金额,备注\n';
+  purchases.forEach(p => { csv += p.date + ',' + p.name + ',' + p.amount + ',' + (p.note||'') + '\n'; });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '小源租衣铺_' + ym + '_经营小结.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('已导出 CSV 文件！');
+}
+
+/* ==================== RECORD MENU ==================== */
+function openRecordMenu() {
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.edit} 记一笔账</h2>
+    <div class="action-menu">
+      <div class="action-menu-item" onclick="closeAllSheets(); openIncomeSheet();">
+        <span class="am-icon">${IC.money}</span>
+        <span class="am-text">录入收入</span>
+      </div>
+      <div class="action-menu-item" onclick="closeAllSheets(); openPurchaseSheet();">
+        <span class="am-icon">${IC.bag}</span>
+        <span class="am-text">录入进货</span>
+      </div>
+    </div>
+  `;
+  openSheet(content);
+}
+
+function openIncomeSheet() {
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.money} 录入收入</h2>
+    <div class="form-group">
+      <label>日期</label>
+      <input type="date" id="r_date" value="${todayStr()}">
+    </div>
+    <div class="form-group">
+      <label>关联衣物</label>
+      <select id="r_clothes">
+        <option value="">-- 手动输入 --</option>
+        ${DB.clothes.map(c => '<option value="' + c.id + '">' + getIcon(c.icon) + ' ' + c.name + '</option>').join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>商品名称 *</label>
+      <input type="text" id="r_name" placeholder="如：法式碎花连衣裙">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>金额 ¥ *</label>
+        <input type="number" id="r_amount" placeholder="如 140">
+      </div>
+      <div class="form-group">
+        <label>订单号</label>
+        <input type="text" id="r_no" placeholder="选填">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveIncome()">保存</button>
+  `;
+  openSheet(content);
+  $('#r_clothes').onchange = function() {
+    if (this.value) {
+      const c = DB.clothes.find(x => x.id === parseInt(this.value));
+      if (c) $('#r_name').value = c.name;
+    }
+  };
+}
+
+function saveIncome() {
+  const date = $('#r_date').value;
+  const name = $('#r_name').value.trim();
+  const amount = parseFloat($('#r_amount').value) || 0;
+  const no = $('#r_no').value.trim() || '手动录入';
+  if (!name) { showToast('请输入商品名称'); return; }
+  if (amount <= 0) { showToast('请输入金额'); return; }
+  DB.incomes.push({
+    id: (DB.incomes.length ? Math.max(...DB.incomes.map(i=>i.id)) : 0) + 1,
+    date, orderNo: no, amount, clothesName: name
+  });
+  saveDB();
+  closeAllSheets();
+  showToast('收入已记录！');
+  renderLedger();
+  renderOverview();
+}
+
+function openPurchaseSheet() {
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>${IC.bag} 录入进货</h2>
+    <div class="form-group">
+      <label>日期</label>
+      <input type="date" id="p_date" value="${todayStr()}">
+    </div>
+    <div class="form-group">
+      <label>商品名称 *</label>
+      <input type="text" id="p_name" placeholder="如：法式碎花连衣裙">
+    </div>
+    <div class="form-group">
+      <label>进货价 ¥ *</label>
+      <input type="number" id="p_amount" placeholder="如 280">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="p_note" placeholder="如：广州十三行进货">
+    </div>
+    <button class="btn-primary" onclick="savePurchase()">保存</button>
+  `;
+  openSheet(content);
+}
+
+function savePurchase() {
+  const date = $('#p_date').value;
+  const name = $('#p_name').value.trim();
+  const amount = parseFloat($('#p_amount').value) || 0;
+  const note = $('#p_note').value.trim();
+  if (!name) { showToast('请输入商品名称'); return; }
+  if (amount <= 0) { showToast('请输入进货价'); return; }
+  DB.purchases.push({
+    id: (DB.purchases.length ? Math.max(...DB.purchases.map(p=>p.id)) : 0) + 1,
+    date, name, amount, note
+  });
+  saveDB();
+  closeAllSheets();
+  showToast('进货已记录！');
+  renderLedger();
+  renderOverview();
+}
+
+/* ==================== SHEET CONTROL ==================== */
+function openSheet(html) {
+  $('#sheetMain').innerHTML = html;
+  $('#sheetMask').classList.add('open');
+  $('#sheetMain').classList.add('open');
+}
+function closeAllSheets() {
+  $('#sheetMask').classList.remove('open');
+  $('#sheetMain').classList.remove('open');
+}
+
+/* ==================== INIT ==================== */
+loadDB();
+renderShell();
+renderOverview();
+renderShipping();
+renderLedger();
+renderWardrobe();
+
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'o_start' || e.target.id === 'o_end') {
+    checkConflict();
+  }
+});
+</script>
+<script>
+// Register Service Worker for PWA offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('PWA Service Worker registered');
+    }).catch(function(err) {
+      console.log('SW registration failed: ', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
