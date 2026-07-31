@@ -14,7 +14,7 @@
 <meta name="application-name" content="小源租衣铺">
 <meta name="theme-color" content="#B39DDB">
 <meta name="description" content="租衣店铺运营工作台 - 发货排期、每月小结、店铺衣橱管理">
-<link rel="manifest" href="manifest.json?v=6">
+<link rel="manifest" href="manifest.json?v=7">
 <link rel="apple-touch-icon" href="apple-touch-iconb.png">
 <link rel="icon" type="image/png" href="favicon-32b.png">
 <title>小源租衣铺 · 运营工作台</title>
@@ -1549,6 +1549,16 @@ function editClothes(id) {
         </select>
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>累计租金 ¥</label>
+        <input type="number" id="c_totalRent" value="${c.totalRent||0}">
+      </div>
+      <div class="form-group">
+        <label>出租次数</label>
+        <input type="number" id="c_rentCount" value="${c.rentCount||0}">
+      </div>
+    </div>
     <div class="form-group">
       <label>备注</label>
       <input type="text" id="c_note" value="${c.note||''}">
@@ -1576,6 +1586,8 @@ function saveEditClothes(id) {
   c.note = $('#c_note').value.trim();
   c.icon = pickedEmoji;
   c.photo = pickedPhoto;
+  c.totalRent = parseFloat($('#c_totalRent').value) || 0;
+  c.rentCount = parseInt($('#c_rentCount').value) || 0;
   saveDB();
   closeAllSheets();
   pickedPhoto = null;
