@@ -553,6 +553,8 @@ body { min-height: 100vh; max-width: 480px; margin: 0 auto; position: relative; 
     <li onclick="switchTab('ledger'); closeDrawer();"><span class="icon">💰</span> 每月小结</li>
     <li onclick="switchTab('wardrobe'); closeDrawer();"><span class="icon">👗</span> 店铺衣橱</li>
     <li onclick="closeDrawer(); showToast('设置功能开发中~');"><span class="icon">⚙️</span> 设置</li>
+    <li onclick="closeDrawer(); backupData();"><span class="icon">💾</span> 备份数据</li>
+    <li onclick="closeDrawer(); restoreData();"><span class="icon">📂</span> 恢复数据</li>
   </ul>
   <div class="drawer-footer">小源租衣铺 v1.0 🌸</div>
 </div>
@@ -627,6 +629,76 @@ function loadDB() {
 
 function saveDB() {
   localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+}
+
+/* ==================== BACKUP / RESTORE ==================== */
+function backupData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) { showToast('没有数据可备份'); return; }
+    // 压缩并编码
+    const code = btoa(unescape(encodeURIComponent(raw)));
+    const shortCode = code.replace(/=+$/, '');
+    // 复制到剪贴板
+    const ta = document.createElement('textarea');
+    ta.value = shortCode;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    // 同时显示在弹窗里，防止复制失败
+    const content = `
+      <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+      <div class="sheet-handle"></div>
+      <h2>💾 备份数据</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">已复制到剪贴板！请同时保存到备忘录，换链接后可用此码恢复数据。</p>
+      <div class="form-group">
+        <textarea style="width:100%;min-height:120px;font-size:11px;padding:10px;border:2px solid var(--pink-light);border-radius:8px;background:var(--pink-bg);word-break:break-all;" readonly>${shortCode}</textarea>
+      </div>
+      <button class="btn-primary" onclick="closeAllSheets()">已保存</button>
+    `;
+    openSheet(content);
+    showToast('备份码已复制到剪贴板！');
+  } catch(e) {
+    showToast('备份失败：' + e.message);
+  }
+}
+
+function restoreData() {
+  const content = `
+    <button class="sheet-close" onclick="closeAllSheets()">${IC.close}</button>
+    <div class="sheet-handle"></div>
+    <h2>📂 恢复数据</h2>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">粘贴之前备份的码，恢复所有订单和衣橱数据。</p>
+    <div class="form-group">
+      <textarea id="restoreInput" style="width:100%;min-height:120px;font-size:11px;padding:10px;border:2px solid var(--pink-light);border-radius:8px;background:var(--pink-bg);" placeholder="粘贴备份码..."></textarea>
+    </div>
+    <button class="btn-primary" onclick="doRestore()">恢复</button>
+    <button class="btn-secondary" onclick="closeAllSheets()" style="margin-top:8px;">取消</button>
+  `;
+  openSheet(content);
+}
+
+function doRestore() {
+  const code = $('#restoreInput').value.trim();
+  if (!code) { showToast('请输入备份码'); return; }
+  try {
+    const fullCode = code + '='.repeat((4 - code.length % 4) % 4);
+    const raw = decodeURIComponent(escape(atob(fullCode)));
+    const data = JSON.parse(raw);
+    if (!data.clothes || !data.orders) { showToast('备份码无效'); return; }
+    DB = data;
+    saveDB();
+    closeAllSheets();
+    showToast('数据恢复成功！');
+    renderOverview();
+    renderWardrobe();
+    switchTab('overview');
+  } catch(e) {
+    showToast('恢复失败：备份码无效');
+  }
 }
 
 function seedData() {
