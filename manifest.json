@@ -2,7 +2,7 @@
   "name": "小源租衣铺",
   "short_name": "小源租衣铺",
   "start_url": "./index.html",
-  "display": "minimal-ui",
+  "display": "standalone",
   "background_color": "#FAF5FC",
   "theme_color": "#B39DDB",
   "icons": [
