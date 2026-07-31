@@ -2,8 +2,7 @@
   "name": "小源租衣铺 · 运营工作台",
   "short_name": "小源租衣铺",
   "description": "租衣店铺运营工作台 - 发货排期、每月小结、店铺衣橱管理",
-  "start_url": "/xy-rental/",
-  "scope": "/xy-rental/",
+  "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FAF5FC",
@@ -36,19 +35,19 @@
     {
       "name": "发货排期",
       "short_name": "发货",
-      "url": "/xy-rental/#shipping",
+      "url": "#shipping",
       "icons": [{ "src": "icon-192b.png", "sizes": "192x192" }]
     },
     {
       "name": "每月小结",
       "short_name": "账本",
-      "url": "/xy-rental/#ledger",
+      "url": "#ledger",
       "icons": [{ "src": "icon-192b.png", "sizes": "192x192" }]
     },
     {
       "name": "店铺衣橱",
       "short_name": "衣橱",
-      "url": "/xy-rental/#wardrobe",
+      "url": "#wardrobe",
       "icons": [{ "src": "icon-192b.png", "sizes": "192x192" }]
     }
   ]
